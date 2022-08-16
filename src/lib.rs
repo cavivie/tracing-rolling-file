@@ -15,9 +15,9 @@
 //! ```rust
 //! # fn docs() {
 //! # use tracing_rolling_file::*;
-//! let file_appender = BasicRollingFileAppender::new(
+//! let file_appender = RollingFileAppenderBase::new(
 //!     "/var/log/myprogram",
-//!     RollingConditionBasic::new().daily(),
+//!     RollingConditionBase::new().daily(),
 //!     9
 //! ).unwrap();
 //! # }
@@ -152,7 +152,7 @@ where
 
     /// Writes data using the given datetime to calculate the rolling condition
     pub fn write_with_datetime(&mut self, buf: &[u8], now: &DateTime<Local>) -> io::Result<usize> {
-        if self.condition.should_rollover(&now, self.current_filesize) {
+        if self.condition.should_rollover(now, self.current_filesize) {
             if let Err(e) = self.rollover() {
                 // If we can't rollover, just try to continue writing anyway
                 // (better than missing data).
