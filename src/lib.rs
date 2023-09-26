@@ -50,15 +50,13 @@ impl RollingFrequency {
     /// Calculates a datetime that will be different if data should be in
     /// different files.
     pub fn equivalent_datetime(&self, dt: &DateTime<Local>) -> DateTime<Local> {
-        match self {
-            RollingFrequency::EveryDay => Local.ymd(dt.year(), dt.month(), dt.day()).and_hms(0, 0, 0),
-            RollingFrequency::EveryHour => Local.ymd(dt.year(), dt.month(), dt.day()).and_hms(dt.hour(), 0, 0),
-            RollingFrequency::EveryMinute => {
-                Local
-                    .ymd(dt.year(), dt.month(), dt.day())
-                    .and_hms(dt.hour(), dt.minute(), 0)
-            },
-        }
+        let (year, month, day) = (dt.year(), dt.month(), dt.day());
+        let (hour, min, sec) = match self {
+            RollingFrequency::EveryDay => (0, 0, 0),
+            RollingFrequency::EveryHour => (dt.hour(), 0, 0),
+            RollingFrequency::EveryMinute => (dt.hour(), dt.minute(), 0),
+        };
+        Local.with_ymd_and_hms(year, month, day, hour, min, sec).unwrap()
     }
 }
 
