@@ -143,9 +143,22 @@ where
     /// Opens a writer for the current file.
     fn open_writer_if_needed(&mut self) -> io::Result<()> {
         if self.writer_opt.is_none() {
-            let p = self.filename_for(0);
-            self.writer_opt = Some(BufWriter::new(OpenOptions::new().append(true).create(true).open(&p)?));
-            self.current_filesize = fs::metadata(&p).map_or(0, |m| m.len());
+            let path = self.filename_for(0);
+            let path = Path::new(&path);
+            let mut open_options = OpenOptions::new();
+            open_options.append(true).create(true);
+            let new_file = match open_options.open(path) {
+                Ok(new_file) => new_file,
+                Err(err) => {
+                    let Some(parent) = path.parent() else {
+                        return Err(err);
+                    };
+                    fs::create_dir_all(parent)?;
+                    open_options.open(path)?
+                },
+            };
+            self.writer_opt = Some(BufWriter::new(new_file));
+            self.current_filesize = path.metadata().map_or(0, |m| m.len());
         }
         Ok(())
     }
