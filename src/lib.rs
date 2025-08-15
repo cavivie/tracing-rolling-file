@@ -23,9 +23,9 @@
 //! # }
 //! ```
 //!
-//! ## Builder
+//! ### Builder
 //!
-//! To simplify the creation of a `RollingFileAppenderBase`, the following builder methods are provided:
+//! To simplify the creation of a `RollingFileAppenderBase`, an instance can be built as per the example below.
 //!
 //! ```rust
 //! use tracing_rolling_file::*;
@@ -39,18 +39,18 @@
 //!     .unwrap();
 //! ```
 //!
-//! # Non-blocking support
+//! ### Non-blocking support
 //!
-//! To use non-blocking support, use the `tracing_appender::non_blocking::NonBlocking`
-//! the feature needs to be enabled in your Cargo.toml:
+//! To combine the `tracing_appender::non_blocking::NonBlocking` functionality,
+//! the feature needs to be enabled in Cargo.toml, i.e.
 //!
 //! ```toml
 //! [dependencies]
-//! tracing-rolling-file = { version = "0.1.2", features = ["non-blocking"] }
+//! tracing-rolling-file = { version = "0.1.3", features = ["non-blocking"] }
 //! ```
 //!
-//! Once enabled you can use the method `get_non_blocking_appender` to generate
-//! a non-blocking version of the RollingFileAppender.
+//! Once enabled, you can use the method `get_non_blocking_appender` to generate
+//! a non-blocking version of the RollingFileAppenderBase.
 //!
 //! ```rust
 //! # #[cfg(feature = "non-blocking")]
