@@ -22,6 +22,50 @@
 //! ).unwrap();
 //! # }
 //! ```
+//!
+//! ## Builder
+//!
+//! To simplify the creation of a `RollingFileAppenderBase`, the following builder methods are provided:
+//!
+//! ```rust
+//! use tracing_rolling_file::*;
+//!
+//! let builder = RollingFileAppenderBase::builder();
+//! let appender = builder
+//!     .filename(String::from("my_app.log"))
+//!     .max_filecount(10)
+//!     .condition_max_file_size(100)
+//!     .build()
+//!     .unwrap();
+//! ```
+//!
+//! # Non-blocking support
+//!
+//! To use non-blocking support, use the `tracing_appender::non_blocking::NonBlocking`
+//! the feature needs to be enabled in your Cargo.toml:
+//!
+//! ```toml
+//! [dependencies]
+//! tracing-rolling-file = { version = "0.1.2", features = ["non-blocking"] }
+//! ```
+//!
+//! Once enabled you can use the method `get_non_blocking_appender` to generate
+//! a non-blocking version of the RollingFileAppender.
+//!
+//! ```rust
+//! # #[cfg(feature = "non-blocking")]
+//! # fn docs() -> Result<(), Box<dyn std::error::Error>> {
+//! use tracing_rolling_file::*;
+//!
+//! let file_appender = RollingFileAppenderBase::new(
+//!     "/var/log/myprogram",
+//!     RollingConditionBase::new().daily(),
+//!     9
+//! )?;
+//! let (non_blocking, _guard) = file_appender.get_non_blocking_appender();
+//! # Ok(())
+//! # }
+//! ```
 #![deny(warnings)]
 
 use chrono::prelude::*;

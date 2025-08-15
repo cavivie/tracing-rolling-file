@@ -85,15 +85,13 @@ impl RollingCondition for RollingConditionBase {
     }
 }
 
-
-pub struct RollingFileAppenderBaseBuilder
-{
+pub struct RollingFileAppenderBaseBuilder {
     condition: RollingConditionBase,
     filename: String,
     max_filecount: usize,
     current_filesize: u64,
     writer_opt: Option<BufWriter<File>>,
-}    
+}
 
 impl Default for RollingFileAppenderBaseBuilder {
     fn default() -> Self {
@@ -151,21 +149,17 @@ impl RollingFileAppenderBaseBuilder {
     /// Returns an error if the filename is empty.
     pub fn build(self) -> Result<RollingFileAppenderBase, &'static str> {
         if self.filename.is_empty() {
-            return Err("A filename is required to be set and can not be blank")
+            return Err("A filename is required to be set and can not be blank");
         }
-        Ok(
-            RollingFileAppenderBase {
-                condition: self.condition,
-                filename: self.filename,
-                max_filecount: self.max_filecount,
-                current_filesize: self.current_filesize,
-                writer_opt: self.writer_opt,
-            }
-        )
+        Ok(RollingFileAppenderBase {
+            condition: self.condition,
+            filename: self.filename,
+            max_filecount: self.max_filecount,
+            current_filesize: self.current_filesize,
+            writer_opt: self.writer_opt,
+        })
     }
-
 }
-
 
 impl RollingFileAppenderBase {
     /// Creates a new rolling file appender builder instance with the default
@@ -173,9 +167,7 @@ impl RollingFileAppenderBase {
     pub fn builder() -> RollingFileAppenderBaseBuilder {
         RollingFileAppenderBaseBuilder::default()
     }
-
 }
-
 
 #[cfg(feature = "non-blocking")]
 use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
@@ -190,10 +182,8 @@ impl RollingFileAppenderBase {
     pub fn get_non_blocking_appender(self) -> (NonBlocking, WorkerGuard) {
         let (non_blocking, _guard) = non_blocking(self);
         (non_blocking, _guard)
-
     }
 }
-
 
 /// A rolling file appender with a rolling condition based on date/time or size.
 pub type RollingFileAppenderBase = RollingFileAppender<RollingConditionBase>;
@@ -231,7 +221,7 @@ mod test {
 
     fn build_builder_context(mut builder: RollingFileAppenderBaseBuilder) -> Context {
         if builder.filename.is_empty() {
-            builder =builder.filename(String::from("test.log"));
+            builder = builder.filename(String::from("test.log"));
         }
         let tempdir = tempfile::tempdir().unwrap();
         let filename = tempdir.path().join(&builder.filename);
@@ -240,7 +230,6 @@ mod test {
             _tempdir: tempdir,
             rolling: builder.build().unwrap(),
         }
-
     }
 
     #[test]
@@ -425,14 +414,17 @@ mod test {
     #[test]
     fn rolling_file_appender_builder() {
         let builder = RollingFileAppender::builder();
-        
-        let builder = builder
-            .condition_daily()
-            .condition_max_file_size(10);
+
+        let builder = builder.condition_daily().condition_max_file_size(10);
         let mut c = build_builder_context(builder);
-        c.rolling.write_with_datetime(b"abcdefghijklmnop", &Local.with_ymd_and_hms(2021, 3, 31, 4, 4, 4).unwrap())
+        c.rolling
+            .write_with_datetime(
+                b"abcdefghijklmnop",
+                &Local.with_ymd_and_hms(2021, 3, 31, 4, 4, 4).unwrap(),
+            )
             .unwrap();
-        c.rolling.write_with_datetime(b"12345678", &Local.with_ymd_and_hms(2021, 3, 31, 5, 4, 4).unwrap())
+        c.rolling
+            .write_with_datetime(b"12345678", &Local.with_ymd_and_hms(2021, 3, 31, 5, 4, 4).unwrap())
             .unwrap();
         assert!(AsRef::<Path>::as_ref(&c.rolling.filename_for(1)).exists());
         assert!(Path::new(&c.rolling.filename_for(0)).exists());
@@ -443,9 +435,7 @@ mod test {
     #[test]
     fn rolling_file_appender_builder_no_filename() {
         let builder = RollingFileAppender::builder();
-        let appender  = builder
-            .condition_daily()
-            .build();
+        let appender = builder.condition_daily().build();
         assert!(appender.is_err());
     }
 }
