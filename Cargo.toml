@@ -3,23 +3,22 @@ name = "tracing-rolling-file"
 version = "0.1.3"
 authors = ["Cavivie <cavivie@gmail.com>"]
 edition = "2018"
-
 description = "A rolling file appender with customizable rolling conditions."
-homepage = "https://github.com/cavivie/tracing-rolling-file"
 documentation = "https://docs.rs/tracing-rolling-file/"
-repository = "https://github.com/cavivie/tracing-rolling-file"
-keywords = ["rolling", "logging", "tracing"]
-categories = ["debugging"]
 readme = "README.md"
+homepage = "https://github.com/cavivie/tracing-rolling-file"
+repository = "https://github.com/cavivie/tracing-rolling-file"
 license = "MIT/Apache-2.0"
-
-[dev-dependencies]
-tempfile = "3.0.5"
-tracing-appender = "0.2.3"
+keywords = ["logging", "rolling", "tracing"]
+categories = ["development-tools::debugging"]
 
 [dependencies]
 chrono = "0.4"
 tracing-appender = { version = "0.2.3", optional = true }
+
+[dev-dependencies]
+tempfile = "3.0.5"
+tracing-appender = "0.2.3"
 
 [features]
 non-blocking = ["dep:tracing-appender"]
