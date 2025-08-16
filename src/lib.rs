@@ -224,10 +224,7 @@ where
                 buf_len
             })
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "unexpected condition: writer is missing",
-            ))
+            Err(io::Error::other("unexpected condition: writer is missing"))
         }
     }
 }

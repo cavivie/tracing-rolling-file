@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - build: linux-amd64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - build: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - build: windows-amd64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust (rustup)
+        run: |
+          set -euxo pipefail
+          rustup toolchain install stable --no-self-update --profile minimal
+          rustup default stable
+        shell: bash
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test
+
+  msrv_n_clippy:
+    name: MSRV & Clippy & Rustfmt
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt -- --check
+      - run: cargo clippy --all-features -- -D warnings
+      - run: cargo check --lib
+      - run: cargo check --lib --all-features
