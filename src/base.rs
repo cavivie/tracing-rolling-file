@@ -85,6 +85,106 @@ impl RollingCondition for RollingConditionBase {
     }
 }
 
+pub struct RollingFileAppenderBaseBuilder {
+    condition: RollingConditionBase,
+    filename: String,
+    max_filecount: usize,
+    current_filesize: u64,
+    writer_opt: Option<BufWriter<File>>,
+}
+
+impl Default for RollingFileAppenderBaseBuilder {
+    fn default() -> Self {
+        RollingFileAppenderBaseBuilder {
+            condition: RollingConditionBase::default(),
+            filename: String::new(),
+            max_filecount: 10,
+            current_filesize: 0,
+            writer_opt: None,
+        }
+    }
+}
+
+impl RollingFileAppenderBaseBuilder {
+    /// Sets the log filename. Uses absolute path if provided, otherwise
+    /// creates files in the current working directory.
+    pub fn filename(mut self, filename: String) -> Self {
+        self.filename = filename;
+        self
+    }
+
+    /// Sets a condition for the maximum number of files to create before rolling
+    /// over and deleting the oldest one.
+    pub fn max_filecount(mut self, max_filecount: usize) -> Self {
+        self.max_filecount = max_filecount;
+        self
+    }
+
+    /// Sets a condition to rollover on a daily basis
+    pub fn condition_daily(mut self) -> Self {
+        self.condition.frequency_opt = Some(RollingFrequency::EveryDay);
+        self
+    }
+
+    /// Sets a condition to rollover when the date or hour changes
+    pub fn condition_hourly(mut self) -> Self {
+        self.condition.frequency_opt = Some(RollingFrequency::EveryHour);
+        self
+    }
+
+    /// Sets a condition to rollover when the date or minute changes
+    pub fn condition_minutely(mut self) -> Self {
+        self.condition.frequency_opt = Some(RollingFrequency::EveryMinute);
+        self
+    }
+
+    /// Sets a condition to rollover when a certain size is reached
+    pub fn condition_max_file_size(mut self, x: u64) -> Self {
+        self.condition.max_size_opt = Some(x);
+        self
+    }
+
+    /// Builds a RollingFileAppenderBase instance from the current settings.
+    ///
+    /// Returns an error if the filename is empty.
+    pub fn build(self) -> Result<RollingFileAppenderBase, &'static str> {
+        if self.filename.is_empty() {
+            return Err("A filename is required to be set and can not be blank");
+        }
+        Ok(RollingFileAppenderBase {
+            condition: self.condition,
+            filename: self.filename,
+            max_filecount: self.max_filecount,
+            current_filesize: self.current_filesize,
+            writer_opt: self.writer_opt,
+        })
+    }
+}
+
+impl RollingFileAppenderBase {
+    /// Creates a new rolling file appender builder instance with the default
+    /// settings without a filename set.
+    pub fn builder() -> RollingFileAppenderBaseBuilder {
+        RollingFileAppenderBaseBuilder::default()
+    }
+}
+
+#[cfg(feature = "non-blocking")]
+use tracing_appender::non_blocking::{NonBlocking, WorkerGuard};
+
+#[cfg(feature = "non-blocking")]
+use tracing_appender::non_blocking;
+
+#[cfg(feature = "non-blocking")]
+impl RollingFileAppenderBase {
+    /// Generates a non-blocking Struct wrapping the RollingFileAppender
+    /// instance inside and WorkerGuard returned as a tuple.
+    pub fn get_non_blocking_appender(self) -> (NonBlocking, WorkerGuard) {
+        let (non_blocking, _guard) = non_blocking(self);
+        (non_blocking, _guard)
+    }
+}
+
 /// A rolling file appender with a rolling condition based on date/time or size.
 pub type RollingFileAppenderBase = RollingFileAppender<RollingConditionBase>;
 
@@ -116,6 +216,19 @@ mod test {
         Context {
             _tempdir: tempdir,
             rolling,
+        }
+    }
+
+    fn build_builder_context(mut builder: RollingFileAppenderBaseBuilder) -> Context {
+        if builder.filename.is_empty() {
+            builder = builder.filename(String::from("test.log"));
+        }
+        let tempdir = tempfile::tempdir().unwrap();
+        let filename = tempdir.path().join(&builder.filename);
+        builder = builder.filename(String::from(filename.as_os_str().to_str().unwrap()));
+        Context {
+            _tempdir: tempdir,
+            rolling: builder.build().unwrap(),
         }
     }
 
@@ -296,6 +409,34 @@ mod test {
         c.verify_contains("123456789", 2);
         c.verify_contains("0abcdefghijkl", 1);
         c.verify_contains("ZZZ", 0);
+    }
+
+    #[test]
+    fn rolling_file_appender_builder() {
+        let builder = RollingFileAppender::builder();
+
+        let builder = builder.condition_daily().condition_max_file_size(10);
+        let mut c = build_builder_context(builder);
+        c.rolling
+            .write_with_datetime(
+                b"abcdefghijklmnop",
+                &Local.with_ymd_and_hms(2021, 3, 31, 4, 4, 4).unwrap(),
+            )
+            .unwrap();
+        c.rolling
+            .write_with_datetime(b"12345678", &Local.with_ymd_and_hms(2021, 3, 31, 5, 4, 4).unwrap())
+            .unwrap();
+        assert!(AsRef::<Path>::as_ref(&c.rolling.filename_for(1)).exists());
+        assert!(Path::new(&c.rolling.filename_for(0)).exists());
+        c.verify_contains("abcdefghijklmnop", 1);
+        c.verify_contains("12345678", 0);
+    }
+
+    #[test]
+    fn rolling_file_appender_builder_no_filename() {
+        let builder = RollingFileAppender::builder();
+        let appender = builder.condition_daily().build();
+        assert!(appender.is_err());
     }
 }
 // LCOV_EXCL_STOP

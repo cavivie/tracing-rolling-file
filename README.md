@@ -29,6 +29,45 @@ let file_appender = RollingFileAppenderBase::new(
     9
 ).unwrap();
 ```
+### Builder
+
+To simplify the creation of a `RollingFileAppenderBase`, an instance can be built as per the example below.
+
+```rust
+use tracing_rolling_file::*;
+
+let builder = RollingFileAppenderBase::builder();
+let appender = builder
+    .filename(String::from("/var/log/myprogram"))
+    .max_filecount(10)
+    .condition_max_file_size(100)
+    .build()
+    .unwrap();
+```
+
+### Non-blocking support
+
+To combine the `tracing_appender::non_blocking::NonBlocking` functionality, the feature needs to be enabled in Cargo.toml, i.e.
+
+```toml
+[dependencies]
+tracing-rolling-file = { version = "0.1.3", features = ["non-blocking"] }
+```
+
+Once enabled, you can use the method `get_non_blocking_appender` to generate
+a non-blocking version of the RollingFileAppenderBase.
+
+```rust
+use tracing_rolling_file::*;
+
+let file_appender = RollingFileAppenderBase::new(
+    "/var/log/myprogram",
+    RollingConditionBase::new().daily(),
+    9
+)?;
+let (non_blocking, _guard) = file_appender.get_non_blocking_appender();
+```
+
 
 ## Development
 
